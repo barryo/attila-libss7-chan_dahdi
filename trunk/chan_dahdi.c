@@ -9844,9 +9844,8 @@ static void *ss7_linkset(void *data)
 	struct pollfd pollers[NUM_DCHANS];
 	int cic;
 	unsigned int dpc;
-	unsigned char state[255], mb_state[255];
+	unsigned char mb_state[255];
 	int nextms = 0;
-	int mbcount;
 
 	ss7_start(ss7);
 
@@ -10055,24 +10054,16 @@ static void *ss7_linkset(void *data)
 				ast_mutex_lock(&p->lock);
 				p->ss7call = e->gra.call;
 
-				ss7_block_cics(linkset, e->grs.startcic, e->grs.endcic, e->grs.opc, NULL, 0, 1,
-					SS7_BLOCKED_MAINTENANCE | SS7_BLOCKED_HARDWARE);
+				ss7_block_cics(linkset, e->grs.startcic, e->grs.endcic, e->grs.opc, NULL, 0, 1,  SS7_BLOCKED_HARDWARE);
 
-				mbcount = 0;
 				for (i = 0; i <= e->grs.endcic - p->cic; i++)	{
 					chanpos = ss7_find_cic(p->ss7, i + p->cic, p->dpc);
 					p_cur = p->ss7->pvts[chanpos];
 					if(p != p_cur)
 						ast_mutex_lock(&p_cur->lock);
 
-					if (p_cur->locallyblocked & SS7_BLOCKED_HARDWARE)
-						state[i] = 1;
-					else
-						state[i] = 0;
-
 					if (p_cur->locallyblocked & SS7_BLOCKED_MAINTENANCE) {
 						mb_state[i] = 1;
-						mbcount++;
 					} else
 						mb_state[i] = 0;
 
@@ -10094,10 +10085,7 @@ static void *ss7_linkset(void *data)
 						ast_mutex_unlock(&p_cur->lock);
 				}
 
-				if(mbcount)
-					isup_cgb(ss7, p->ss7call, e->grs.endcic, mb_state, 0);
-
-				isup_gra(ss7, p->ss7call, e->grs.endcic, state);
+				isup_gra(ss7, p->ss7call, e->grs.endcic, mb_state);
 				if(!p->owner)
 					p->ss7call = isup_free_call_if_clear(ss7, p->ss7call);
 				ast_mutex_unlock(&p->lock);
@@ -10129,7 +10117,7 @@ static void *ss7_linkset(void *data)
 				ast_verbose("Got reset acknowledgement from CIC %d to %d DPC: %d\n", e->gra.startcic, e->gra.endcic, e->gra.opc);
 				ss7_inservice(linkset, e->gra.startcic, e->gra.endcic, e->gra.opc);
 				ss7_block_cics(linkset, e->gra.startcic, e->gra.endcic, e->gra.opc, e->gra.status,
-					1, 1, SS7_BLOCKED_HARDWARE);
+					1, 1, SS7_BLOCKED_MAINTENANCE);
 
 				p->ss7call = isup_free_call_if_clear(ss7, p->ss7call); /* we may sent a CDB with GRS! */
 				ast_mutex_unlock(&p->lock);
