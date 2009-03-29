@@ -15954,6 +15954,17 @@ static int process_dahdi(struct dahdi_chan_conf *confp, struct ast_variable *v, 
 					ast_log(LOG_ERROR, "Please specify inr_if_no_calling after sigchan!\n");
 				else if (ast_true(v->value))
 					ss7_set_flags(link->ss7, SS7_INR_IF_NO_CALLING);
+			} else if (!strcasecmp(v->name, "non_isdn_access")) {
+				struct dahdi_ss7 *link;
+				link = ss7_resolve_linkset(cur_linkset);
+				if (!link) {
+					ast_log(LOG_ERROR, "Invalid linkset number.  Must be between 1 and %d\n", NUM_SPANS + 1);
+					return -1;
+				}
+				if(!link->ss7)
+					ast_log(LOG_ERROR, "Please specify non_isdn_access after sigchan!\n");
+				else if (ast_true(v->value))
+					ss7_clear_flags(link->ss7, SS7_ISDN_ACCES_INDICATOR);
 			} else if (!strcasecmp(v->name, "sls_shift")) {
 				struct dahdi_ss7 *link;
 				link = ss7_resolve_linkset(cur_linkset);
