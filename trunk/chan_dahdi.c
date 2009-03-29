@@ -6033,14 +6033,14 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 #endif
 				ast_moh_start(chan, data, p->mohinterpret);
 #ifdef HAVE_SS7
-			if (p->ss7) {
+			/* if (p->ss7) {
 				if (!ss7_grab(p, p->ss7)) {
 					if(p->ss7call)
 						isup_sus(p->ss7->ss7, p->ss7call, 0);
 					ss7_rel(p->ss7);
 				} else
 					ast_log(LOG_WARNING, "Unable to grab SS& on linkset %d\n", p->span);
-			}
+			} it was just a mistake */
 #endif
 			break;
 		case AST_CONTROL_UNHOLD:
@@ -6055,14 +6055,14 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 #endif
 				ast_moh_stop(chan);
 #ifdef HAVE_SS7
-			if (p->ss7) {
+			/* if (p->ss7) {
 				if (!ss7_grab(p, p->ss7)) {
 					if(p->ss7call)
 						isup_res(p->ss7->ss7, p->ss7call, 0);
 					ss7_rel(p->ss7);
 				} else
 					ast_log(LOG_WARNING, "Unable to grab SS& on linkset %d\n", p->span);
-			}
+			} it was just a mistake */
 #endif
 			break;
 		case AST_CONTROL_RADIO_KEY:
