@@ -10278,15 +10278,43 @@ ss7_start_switch:
 						p->called_complete = 1; /* If COT succesful start call! */
 						/* Set DNID */
 						strncpy(p->dnid, p->exten, sizeof(p->dnid));
-						if ((e->e == ISUP_EVENT_IAM) ? !e->iam.cot_check_required : (!e->sam.cot_check_required | e->sam.cot_check_passed))
+						if ((e->e == ISUP_EVENT_IAM) ? !(e->iam.cot_check_required || e->iam.cot_performed_on_previous_cic) : (!(e->sam.cot_check_required | e->sam.cot_performed_on_previous_cic) || e->sam.cot_check_passed))
 							ss7_start_call(p, linkset);
 				} else if (!ast_matchmore_extension(NULL, p->context, p->exten, 1, p->cid_num) || p->called_complete) {
 					ast_debug(1, "Call on CIC for unconfigured extension %s\n", p->exten);
 					isup_rel(ss7, (e->e == ISUP_EVENT_IAM) ? e->iam.call : e->sam.call, AST_CAUSE_UNALLOCATED);
 				}
 				ast_mutex_unlock(&p->lock);
+
+				if (e->iam.cot_performed_on_previous_cic) {
+					chanpos = ss7_find_cic(linkset, (e->iam.cic - 1), e->iam.opc);
+					if (chanpos < 0) {
+						/* some stupid switch do this */
+						ast_verbose("COT request on previous non exists CIC %d in IAM PC %d\n", (e->iam.cic - 1), e->iam.opc);
+						break;
+					}
+					ast_verbose("COT request on previous CIC %d in IAM PC %d\n", (e->iam.cic - 1), e->iam.opc);
+					p = linkset->pvts[chanpos];
+					ast_mutex_lock(&p->lock);
+					p->inservice = 0; /* to prevent to use this circuit */
+					dahdi_loopback(p, 1);
+					ast_mutex_unlock(&p->lock);
+				}
 				break;
 			case ISUP_EVENT_COT:
+				if (e->cot.cot_performed_on_previous_cic) {
+					chanpos = ss7_find_cic(linkset, (e->cot.cic - 1), e->cot.opc);
+					/* some stupid switches do this!!! */
+					if (chanpos > 0) {
+						p = linkset->pvts[chanpos];
+						ast_mutex_lock(&p->lock);
+						p->inservice = 1;
+						dahdi_loopback(p, 0);
+						ast_mutex_unlock(&p->lock);
+						ast_verbose("Loop turned of on CIC: %d PC: %d",  (e->cot.cic - 1), e->cot.opc);
+					}
+				}
+
 				chanpos = ss7_find_cic(linkset, e->cot.cic, e->cot.opc);
 				if (chanpos < 0) { /* Never will be true */
 					ast_log(LOG_WARNING, "COT on unconfigured CIC %d PC %d\n", e->cot.cic, e->cot.opc);
@@ -10300,10 +10328,13 @@ ss7_start_switch:
 
 				if (p->loopedback) {
 					dahdi_loopback(p, 0);
-					/* Don't start call if we didn't get IAM or COT failed! */
-					if ((e->cot.got_sent_msg & ISUP_GOT_IAM) && e->cot.passed && p->called_complete)
-						ss7_start_call(p, linkset);
+					ast_verbose("Loop turned of on CIC: %d PC: %d",  e->cot.cic, e->cot.opc);
 				}
+
+				/* Don't start call if we didn't get IAM or COT failed! */
+				if ((e->cot.got_sent_msg & ISUP_GOT_IAM) && e->cot.passed && p->called_complete)
+					ss7_start_call(p, linkset);
+
 				p->ss7call = isup_free_call_if_clear(ss7, p->ss7call);
 				ast_mutex_unlock(&p->lock);
 				break;
