@@ -5883,6 +5883,20 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 				res = tone_zone_play_tone(p->subs[index].dfd, DAHDI_TONE_BUSY);
 			} else
 #endif
+#ifdef HAVE_SS7
+			if (p->priindication_oob && p->sig == SIG_SS7) {
+				chan->hangupcause = AST_CAUSE_USER_BUSY;
+				chan->_softhangup |= AST_SOFTHANGUP_DEV;
+				res = 0;
+			} else if (!p->progress && p->sig == SIG_SS7) {
+				if (p->ss7->ss7) {
+					ss7_grab(p, p->ss7);
+					isup_rel(p->ss7->ss7, p->ss7call, AST_CAUSE_BUSY);
+					ss7_rel(p->ss7);
+				}
+				res = 0;
+			} else
+#endif
 				res = tone_zone_play_tone(p->subs[index].dfd, DAHDI_TONE_BUSY);
 			break;
 		case AST_CONTROL_RINGING:
@@ -6017,6 +6031,20 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 				}
 				p->progress = 1;
 				res = tone_zone_play_tone(p->subs[index].dfd, DAHDI_TONE_CONGESTION);
+			} else
+#endif
+#ifdef HAVE_SS7
+			if (p->priindication_oob && p->sig == SIG_SS7) {
+				chan->hangupcause = AST_CAUSE_SWITCH_CONGESTION;
+				chan->_softhangup |= AST_SOFTHANGUP_DEV;
+				res = 0;
+			} else if (!p->progress && p->sig == SIG_SS7) {
+				if (p->ss7->ss7) {
+					ss7_grab(p, p->ss7);
+					isup_rel(p->ss7->ss7, p->ss7call, AST_CAUSE_SWITCH_CONGESTION);
+					ss7_rel(p->ss7);
+				}
+				res = 0;
 			} else
 #endif
 				res = tone_zone_play_tone(p->subs[index].dfd, DAHDI_TONE_CONGESTION);
