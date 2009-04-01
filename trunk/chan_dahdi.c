@@ -10296,8 +10296,10 @@ ss7_start_switch:
 					ast_verbose("COT request on previous CIC %d in IAM PC %d\n", (e->iam.cic - 1), e->iam.opc);
 					p = linkset->pvts[chanpos];
 					ast_mutex_lock(&p->lock);
-					p->inservice = 0; /* to prevent to use this circuit */
-					dahdi_loopback(p, 1);
+					if (!p->ss7call) {
+						p->inservice = 0; /* to prevent to use this circuit */
+						dahdi_loopback(p, 1);
+					} /* If already have a call don't loop */
 					ast_mutex_unlock(&p->lock);
 				}
 				break;
@@ -10311,7 +10313,7 @@ ss7_start_switch:
 						p->inservice = 1;
 						dahdi_loopback(p, 0);
 						ast_mutex_unlock(&p->lock);
-						ast_verbose("Loop turned of on CIC: %d PC: %d",  (e->cot.cic - 1), e->cot.opc);
+						ast_verbose("Loop turned off on CIC: %d PC: %d\n",  (e->cot.cic - 1), e->cot.opc);
 					}
 				}
 
@@ -10328,7 +10330,7 @@ ss7_start_switch:
 
 				if (p->loopedback) {
 					dahdi_loopback(p, 0);
-					ast_verbose("Loop turned of on CIC: %d PC: %d",  e->cot.cic, e->cot.opc);
+					ast_verbose("Loop turned off on CIC: %d PC: %d\n",  e->cot.cic, e->cot.opc);
 				}
 
 				/* Don't start call if we didn't get IAM or COT failed! */
