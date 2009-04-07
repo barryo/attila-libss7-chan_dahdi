@@ -3643,6 +3643,7 @@ static int dahdi_answer(struct ast_channel *ast)
 				isup_set_connected(p->ss7call, connected_num + connected_strip, connected_nai, connected_pres, SS7_SCREENING_NETWORK_PROVIDED);
 			}
 			p->proceeding = 1;
+			p->dialing = 0;
 			res = isup_anm(p->ss7->ss7, p->ss7call);
 			ss7_rel(p->ss7);
 		} else {
@@ -10033,6 +10034,7 @@ static void *ss7_linkset(void *data)
 						ast_debug(1, "Queuing frame PROGRESS on CIC %d\n", p->cic);
 						dahdi_queue_frame(p, &f, linkset);
 						p->progress = 1;
+						p->dialing = 0;
 						if (p->dsp && p->dsp_features) {
 							ast_dsp_set_features(p->dsp, p->dsp_features);
 							p->dsp_features = 0;
@@ -10444,6 +10446,7 @@ ss7_start_switch:
 					}
 					dahdi_queue_frame(p, &f, linkset);
 					p->proceeding = 1;
+					p->dialing = 0;
 					/* Send alerting if subscriber is free */
 					if (e->acm.called_party_status_ind == 1) {
 						p->alerting = 1;
