@@ -8510,14 +8510,14 @@ static struct dahdi_pvt *mkintf(int channel, const struct dahdi_chan_conf *conf,
 				tmp->ss7call = NULL;
 				ss7->pvts[ss7->numchans++] = tmp;
 
-				ast_copy_string(linksets[span - 1].internationalprefix, conf->ss7.internationalprefix, sizeof(linksets[span-1].internationalprefix));
-				ast_copy_string(linksets[span - 1].nationalprefix, conf->ss7.nationalprefix, sizeof(linksets[span-1].nationalprefix));
-				ast_copy_string(linksets[span - 1].subscriberprefix, conf->ss7.subscriberprefix, sizeof(linksets[span-1].subscriberprefix));
-				ast_copy_string(linksets[span - 1].unknownprefix, conf->ss7.unknownprefix, sizeof(linksets[span-1].unknownprefix));
-				ast_copy_string(linksets[span - 1].networkroutedprefix, conf->ss7.networkroutedprefix, sizeof(linksets[span-1].networkroutedprefix));
+				ast_copy_string(ss7->internationalprefix, conf->ss7.internationalprefix, sizeof(linksets[span-1].internationalprefix));
+				ast_copy_string(ss7->nationalprefix, conf->ss7.nationalprefix, sizeof(linksets[span-1].nationalprefix));
+				ast_copy_string(ss7->subscriberprefix, conf->ss7.subscriberprefix, sizeof(linksets[span-1].subscriberprefix));
+				ast_copy_string(ss7->unknownprefix, conf->ss7.unknownprefix, sizeof(linksets[span-1].unknownprefix));
+				ast_copy_string(ss7->networkroutedprefix, conf->ss7.networkroutedprefix, sizeof(linksets[span-1].networkroutedprefix));
 
-				linksets[span - 1].called_nai = conf->ss7.called_nai;
-				linksets[span - 1].calling_nai = conf->ss7.calling_nai;
+				ss7->called_nai = conf->ss7.called_nai;
+				ss7->calling_nai = conf->ss7.calling_nai;
 			}
 #endif
 #ifdef HAVE_PRI
