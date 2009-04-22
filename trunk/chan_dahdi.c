@@ -9576,7 +9576,10 @@ static int ss7_clear_channels(struct dahdi_pvt *p, int endcic, int do_hangup) {
 		if (p_cur->owner) {
 			p_cur->owner->hangupcause = AST_CAUSE_NORMAL_CLEARING;
 			p_cur->owner->_softhangup |= AST_SOFTHANGUP_DEV;
-			p_cur->do_hangup = do_hangup;
+			if (p != p_cur)
+				p_cur->do_hangup = do_hangup;
+			else
+				p_cur->do_hangup = SS7_HANGUP_DO_NOTHING;
 			clean = 0;
 		} else if (p_cur->ss7call && p != p_cur) {
 			isup_free_call(p_cur->ss7->ss7, p_cur->ss7call);
