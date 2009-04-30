@@ -10304,7 +10304,7 @@ ss7_start_switch:
 					strncpy(p->dnid, p->exten, sizeof(p->dnid));
 					if ((e->e == ISUP_EVENT_IAM) ? !(e->iam.cot_check_required || e->iam.cot_performed_on_previous_cic) : (!(e->sam.cot_check_required || e->sam.cot_performed_on_previous_cic) || e->sam.cot_check_passed))
 						ss7_start_call(p, linkset);
-				} else if (ast_canmatch_extension(NULL, p->context, p->exten, 1, p->cid_num)) {
+				} else if (ast_canmatch_extension(NULL, p->context, p->exten, 1, p->cid_num) && !p->called_complete) {
 					isup_start_digittimeout(ss7, p->ss7call);
 				} else if (!ast_matchmore_extension(NULL, p->context, p->exten, 1, p->cid_num) || p->called_complete) {
 					ast_debug(1, "Call on CIC for unconfigured extension %s\n", p->exten);
