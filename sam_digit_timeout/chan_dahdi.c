@@ -10337,7 +10337,7 @@ ss7_start_switch:
 					break;
 				}
 				p = linkset->pvts[chanpos];
-
+				ast_debug(1, "Digittimeout on CIC: $d PC: %d\n", e->digittimeout.cic, e->digittimeout.opc);
 				ast_mutex_lock(&p->lock);
 				p->called_complete = 1; /* If COT succesful start call! */
 				strncpy(p->dnid, p->exten, sizeof(p->dnid));
