@@ -10298,12 +10298,12 @@ static void *ss7_linkset(void *data)
 ss7_start_switch:
 				if (option_verbose > 2)
 					ast_verbose("SS7 exten: %s complete: %i\n", p->exten, p->called_complete);
-				if (ast_exists_extension(NULL, p->context, p->exten, 1, p->cid_num)) {
-						p->called_complete = 1; /* If COT succesful start call! */
-						/* Set DNID */
-						strncpy(p->dnid, p->exten, sizeof(p->dnid));
-						if ((e->e == ISUP_EVENT_IAM) ? !(e->iam.cot_check_required || e->iam.cot_performed_on_previous_cic) : (!(e->sam.cot_check_required || e->sam.cot_performed_on_previous_cic) || e->sam.cot_check_passed))
-							ss7_start_call(p, linkset);
+				if (ast_exists_extension(NULL, p->context, p->exten, 1, p->cid_num) && !ast_matchmore_extension(NULL, p->context, p->exten, 1, p->cid_num)) {
+					p->called_complete = 1; /* If COT succesful start call! */
+					/* Set DNID */
+					strncpy(p->dnid, p->exten, sizeof(p->dnid));
+					if ((e->e == ISUP_EVENT_IAM) ? !(e->iam.cot_check_required || e->iam.cot_performed_on_previous_cic) : (!(e->sam.cot_check_required || e->sam.cot_performed_on_previous_cic) || e->sam.cot_check_passed))
+						ss7_start_call(p, linkset);
 				} else if (!ast_matchmore_extension(NULL, p->context, p->exten, 1, p->cid_num) || p->called_complete) {
 					ast_debug(1, "Call on CIC for unconfigured extension %s\n", p->exten);
 					isup_rel(ss7, (e->e == ISUP_EVENT_IAM) ? e->iam.call : e->sam.call, AST_CAUSE_UNALLOCATED);
@@ -10340,6 +10340,7 @@ ss7_start_switch:
 
 				ast_mutex_lock(&p->lock);
 				p->called_complete = 1; /* If COT succesful start call! */
+				strncpy(p->dnid, p->exten, sizeof(p->dnid));
 				if (!(e->digittimeout.cot_check_required || e->digittimeout.cot_performed_on_previous_cic) || e->digittimeout.cot_check_passed)
 					ss7_start_call(p, linkset);
 				ast_mutex_unlock(&p->lock);
