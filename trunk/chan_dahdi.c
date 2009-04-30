@@ -10296,21 +10296,23 @@ static void *ss7_linkset(void *data)
 
 				p->echocontrol_ind = e->iam.echocontrol_ind;
 ss7_start_switch:
-				if(option_verbose > 2)
+				if (option_verbose > 2)
 					ast_verbose("SS7 exten: %s complete: %i\n", p->exten, p->called_complete);
-				if (ast_exists_extension(NULL, p->context, p->exten, 1, p->cid_num)) {
-						p->called_complete = 1; /* If COT succesful start call! */
-						/* Set DNID */
-						strncpy(p->dnid, p->exten, sizeof(p->dnid));
-						if ((e->e == ISUP_EVENT_IAM) ? !(e->iam.cot_check_required || e->iam.cot_performed_on_previous_cic) : (!(e->sam.cot_check_required | e->sam.cot_performed_on_previous_cic) || e->sam.cot_check_passed))
-							ss7_start_call(p, linkset);
+				if (ast_exists_extension(NULL, p->context, p->exten, 1, p->cid_num) && (!ast_matchmore_extension(NULL, p->context, p->exten, 1, p->cid_num) || p->called_complete)) {
+					p->called_complete = 1; /* If COT succesful start call! */
+					/* Set DNID */
+					strncpy(p->dnid, p->exten, sizeof(p->dnid));
+					if ((e->e == ISUP_EVENT_IAM) ? !(e->iam.cot_check_required || e->iam.cot_performed_on_previous_cic) : (!(e->sam.cot_check_required || e->sam.cot_performed_on_previous_cic) || e->sam.cot_check_passed))
+						ss7_start_call(p, linkset);
+				} else if (ast_canmatch_extension(NULL, p->context, p->exten, 1, p->cid_num) && !p->called_complete) {
+					isup_start_digittimeout(ss7, p->ss7call);
 				} else if (!ast_matchmore_extension(NULL, p->context, p->exten, 1, p->cid_num) || p->called_complete) {
 					ast_debug(1, "Call on CIC for unconfigured extension %s\n", p->exten);
 					isup_rel(ss7, (e->e == ISUP_EVENT_IAM) ? e->iam.call : e->sam.call, AST_CAUSE_UNALLOCATED);
 				}
 				ast_mutex_unlock(&p->lock);
 
-				if (e->iam.cot_performed_on_previous_cic) {
+				if (e->e == ISUP_EVENT_IAM && e->iam.cot_performed_on_previous_cic) {
 					chanpos = ss7_find_cic(linkset, (e->iam.cic - 1), e->iam.opc);
 					if (chanpos < 0) {
 						/* some stupid switch do this */
@@ -10326,6 +10328,22 @@ ss7_start_switch:
 					} /* If already have a call don't loop */
 					ast_mutex_unlock(&p->lock);
 				}
+				break;
+			case ISUP_EVENT_DIGITTIMEOUT:
+				chanpos = ss7_find_cic(linkset, e->digittimeout.cic, e->digittimeout.opc);
+				if (chanpos < 0) {
+					ast_log(LOG_WARNING, "DIGITTIMEOUT on unconfigured CIC %d PC %d\n", e->digittimeout.cic, e->digittimeout.opc);
+					isup_free_call(ss7, e->digittimeout.call);
+					break;
+				}
+				p = linkset->pvts[chanpos];
+				ast_debug(1, "Digittimeout on CIC: %d PC: %d\n", e->digittimeout.cic, e->digittimeout.opc);
+				ast_mutex_lock(&p->lock);
+				p->called_complete = 1; /* If COT succesful start call! */
+				strncpy(p->dnid, p->exten, sizeof(p->dnid));
+				if (!(e->digittimeout.cot_check_required || e->digittimeout.cot_performed_on_previous_cic) || e->digittimeout.cot_check_passed)
+					ss7_start_call(p, linkset);
+				ast_mutex_unlock(&p->lock);
 				break;
 			case ISUP_EVENT_COT:
 				if (e->cot.cot_performed_on_previous_cic) {
