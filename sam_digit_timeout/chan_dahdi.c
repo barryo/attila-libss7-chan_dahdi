@@ -10298,7 +10298,7 @@ static void *ss7_linkset(void *data)
 ss7_start_switch:
 				if (option_verbose > 2)
 					ast_verbose("SS7 exten: %s complete: %i\n", p->exten, p->called_complete);
-				if (ast_exists_extension(NULL, p->context, p->exten, 1, p->cid_num) && !ast_matchmore_extension(NULL, p->context, p->exten, 1, p->cid_num)) {
+				if (ast_exists_extension(NULL, p->context, p->exten, 1, p->cid_num) && (!ast_matchmore_extension(NULL, p->context, p->exten, 1, p->cid_num) || p->called_complete)) {
 					p->called_complete = 1; /* If COT succesful start call! */
 					/* Set DNID */
 					strncpy(p->dnid, p->exten, sizeof(p->dnid));
