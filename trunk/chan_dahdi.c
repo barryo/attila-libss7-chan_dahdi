@@ -5828,7 +5828,7 @@ static int dahdi_write(struct ast_channel *ast, struct ast_frame *frame)
 		return -1;
 	}
 	if (p->dialing) {
-		ast_debug(1, "Dropping frame since I'm still dialing on %s...\n",ast->name);
+		/* ast_debug(1, "Dropping frame since I'm still dialing on %s...\n",ast->name); */
 		return 0;
 	}
 	if (!p->owner) {
