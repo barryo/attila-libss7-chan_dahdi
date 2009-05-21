@@ -343,6 +343,7 @@ static int ringt_base = DEFAULT_RINGT;
 #define LINKSET_FLAG_INITIALHWBLO (1 << 1)
 #define LINKSET_FLAG_USEECHOCONTROL (1 << 2)
 #define LINKSET_FLAG_DEFAULTECHOCONTROL (1 << 3)
+#define LINKSET_FLAG_AUTOACM (1 << 4)
 
 #define SS7_BLOCKED_HARDWARE 1 << 1
 #define SS7_BLOCKED_MAINTENANCE 1 << 0
@@ -3642,6 +3643,10 @@ static int dahdi_answer(struct ast_channel *ast)
 
 				isup_set_connected(p->ss7call, connected_num + connected_strip, connected_nai, connected_pres, SS7_SCREENING_NETWORK_PROVIDED);
 			}
+
+			if (!p->proceeding && (p->ss7->flags & LINKSET_FLAG_AUTOACM))
+			    isup_acm(p->ss7->ss7, p->ss7call);
+
 			p->proceeding = 1;
 			p->dialing = 0;
 			res = isup_anm(p->ss7->ss7, p->ss7call);
@@ -5937,6 +5942,11 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 				if (p->ss7->ss7) {
 					ss7_grab(p, p->ss7);
 
+					if (!p->proceeding && (p->ss7->flags & LINKSET_FLAG_AUTOACM)) {
+						isup_acm(p->ss7->ss7, p->ss7call);
+						p->proceeding = 1;
+					}
+
 					if ((isup_far(p->ss7->ss7, p->ss7call)) != -1)
 						p->rlt = 1;
 					if (p->rlt != 1) /* No need to send CPG if call will be RELEASE */
@@ -6015,6 +6025,12 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 			if (!p->progress && p->sig==SIG_SS7 && p->ss7 && !p->outgoing) {
 				if (p->ss7->ss7) {
 					ss7_grab(p, p->ss7);
+
+					if (!p->proceeding && (p->ss7->flags & LINKSET_FLAG_AUTOACM)) {
+						isup_acm(p->ss7->ss7, p->ss7call);
+						p->proceeding = 1;
+					}
+
 					isup_cpg(p->ss7->ss7, p->ss7call, CPG_EVENT_INBANDINFO);
 					p->progress = 1;
 					ss7_rel(p->ss7);
@@ -16007,6 +16023,15 @@ static int process_dahdi(struct dahdi_chan_conf *confp, struct ast_variable *v, 
 				}
 				if (ast_true(v->value))
 					link->flags |= LINKSET_FLAG_EXPLICITACM;
+			} else if (!strcasecmp(v->name, "ss7_autoacm")) {
+				struct dahdi_ss7 *link;
+				link = ss7_resolve_linkset(cur_linkset);
+				if (!link) {
+					ast_log(LOG_ERROR, "Invalid linkset number.  Must be between 1 and %d\n", NUM_SPANS + 1);
+					return -1;
+				}
+				if (ast_true(v->value))
+					link->flags |= LINKSET_FLAG_AUTOACM;
 			} else if (!strcasecmp(v->name, "ss7_initialhwblo")) {
 				struct dahdi_ss7 *link;
 				link = ss7_resolve_linkset(cur_linkset);
