@@ -10414,7 +10414,8 @@ ss7_start_switch:
 				dahdi_loopback(p, 1);
 				ast_mutex_unlock(&p->lock);
 
-				isup_lpa(linkset->ss7, e->ccr.cic, p->dpc);
+				if (linkset->type == SS7_ANSI)
+				    isup_lpa(linkset->ss7, e->ccr.cic, p->dpc);
 				break;
 			case ISUP_EVENT_CVT:
 				ast_debug(1, "Got CVT request on CIC %d\n", e->cvt.cic);
