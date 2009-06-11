@@ -2438,6 +2438,7 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 		const char *ss7_cug_interlock_ni;
 		const char *ss7_cug_interlock_code;
 		const char *ss7_interworking_indicator;
+		const char *ss7_forward_indicator_pmbits;
 
 		c = strchr(dest, '/');
 		if (c)
@@ -2651,6 +2652,10 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 		ss7_interworking_indicator =  pbx_builtin_getvar_helper(ast, "SS7_INTERWORKING_INDICATOR");
 		if (ss7_interworking_indicator)
 			isup_set_interworking_indicator(p->ss7call, ast_true(ss7_interworking_indicator));
+
+		ss7_forward_indicator_pmbits = pbx_builtin_getvar_helper(ast, "SS7_FORWARD_INDICATOR_PMBITS");
+		if (ss7_forward_indicator_pmbits)
+			isup_set_forward_indicator_pmbits(p->ss7call, atoi(ss7_forward_indicator_pmbits));
 
 		ast_channel_unlock(ast);
 
