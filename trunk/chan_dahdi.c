@@ -16125,6 +16125,17 @@ static int process_dahdi(struct dahdi_chan_conf *confp, struct ast_variable *v, 
 					ast_log(LOG_ERROR, "Please specify sls_shift after sigchan!\n");
 				else
 					ss7_set_sls_shift(link->ss7, atoi(v->value));
+			} else if (!strcasecmp(v->name, "cause_location")) {
+				struct dahdi_ss7 *link;
+				link = ss7_resolve_linkset(cur_linkset);
+				if (!link) {
+					ast_log(LOG_ERROR, "Invalid linkset number.  Must be between 1 and %d\n", NUM_SPANS + 1);
+					return -1;
+				}
+				if(!link->ss7)
+					ast_log(LOG_ERROR, "Please specify cause_location after sigchan!\n");
+				else
+					ss7_set_cause_location(link->ss7, atoi(v->value));
 #endif /* HAVE_SS7 */
 			} else if (!strcasecmp(v->name, "cadence")) {
 				/* setup to scan our argument */
