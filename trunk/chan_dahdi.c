@@ -10073,6 +10073,7 @@ static void *ss7_linkset(void *data)
 				default:
 					ast_debug(1, "Do not handle CPG with event type 0x%x\n", e->cpg.event);
 				}
+				p->echocontrol_ind = e->cpg.echocontrol_ind;
 				ast_mutex_unlock(&p->lock);
 				break;
 			case ISUP_EVENT_RSC:
@@ -10500,6 +10501,7 @@ ss7_start_switch:
 						p->alerting = 1;
 						p->subs[SUB_REAL].needringing = 1;
 					}
+					p->echocontrol_ind = e->acm.echocontrol_ind;
 					ast_mutex_unlock(&p->lock);
 				}
 				break;
