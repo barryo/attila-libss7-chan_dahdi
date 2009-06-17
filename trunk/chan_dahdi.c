@@ -4506,6 +4506,7 @@ static void dahdi_handle_dtmfup(struct ast_channel *ast, int index, struct ast_f
 		} else {
 			ast_debug(1, "Fax already handled\n");
 		}
+		dahdi_disable_ec(p);
 		dahdi_confmute(p, 0);
 		p->subs[index].f.frametype = AST_FRAME_NULL;
 		p->subs[index].f.subclass = 0;
@@ -9852,6 +9853,7 @@ static void ss7_start_call(struct dahdi_pvt *p, struct dahdi_ss7 *linkset)
 	ast_mutex_lock(&p->lock);
 
 	/* STARTPBX !!! */
+	ast_setstate(c, AST_STATE_RING);
 	if (ast_pbx_start(c)) {
 		ast_log(LOG_WARNING, "Unable to start PBX on %s\n", c->name);
 		c->hangupcause = AST_CAUSE_SWITCH_CONGESTION; /* The ast_hangup() is dangerous here!!! */
