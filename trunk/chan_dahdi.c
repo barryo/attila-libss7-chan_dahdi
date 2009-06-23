@@ -546,6 +546,7 @@ static struct dahdi_pvt {
 	unsigned int didtdd:1;				/*!< flag to say its done it once */
 	unsigned int dialednone:1;
 	unsigned int dialing:1;
+	unsigned int ignore_dtmf_regenerate:1;
 	unsigned int digital:1;
 	unsigned int dnd:1;
 	unsigned int echobreak:1;
@@ -1249,6 +1250,9 @@ static int dahdi_digit_begin(struct ast_channel *chan, char digit)
 
 	ast_mutex_lock(&pvt->lock);
 
+	if (pvt->ignore_dtmf_regenerate)
+		goto out;
+
 	index = dahdi_get_index(chan, pvt, 0);
 
 	if ((index != SUB_REAL) || !pvt->owner)
@@ -1311,6 +1315,9 @@ static int dahdi_digit_end(struct ast_channel *chan, char digit, unsigned int du
 	pvt = chan->tech_pvt;
 
 	ast_mutex_lock(&pvt->lock);
+
+	if (pvt->ignore_dtmf_regenerate)
+		goto out;
 
 	index = dahdi_get_index(chan, pvt, 0);
 
@@ -2124,6 +2131,7 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 	struct dahdi_pvt *p = ast->tech_pvt;
 	int x, res, index,mysig;
 	char *c, *n, *l;
+	const char *ignore_dtmf_regenerate;
 #ifdef HAVE_PRI
 	char *s = NULL;
 #endif
@@ -2160,6 +2168,12 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 	mysig = p->sig;
 	if (p->outsigmod > -1)
 		mysig = p->outsigmod;
+
+	ignore_dtmf_regenerate = pbx_builtin_getvar_helper(ast, "DAHDI_IGNORE_DTMF_REGENERATE");
+	if (ignore_dtmf_regenerate && ast_true(ignore_dtmf_regenerate)) {
+		ast_debug(1, "Disabled DAHDI DTMF regeneration on %s\n", ast->name);
+		p->ignore_dtmf_regenerate = 1;
+	}
 
 	switch (mysig) {
 	case SIG_FXOLS:
@@ -3193,6 +3207,7 @@ static int dahdi_hangup(struct ast_channel *ast)
 
 	ast_mutex_lock(&p->lock);
 
+	p->ignore_dtmf_regenerate = 0;
 	index = dahdi_get_index(ast, p, 1);
 
 	if ((p->sig == SIG_PRI) || (p->sig == SIG_SS7) || (p->sig == SIG_BRI) || (p->sig == SIG_BRI_PTMP)) {
