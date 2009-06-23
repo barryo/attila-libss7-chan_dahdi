@@ -9868,7 +9868,6 @@ static void ss7_start_call(struct dahdi_pvt *p, struct dahdi_ss7 *linkset)
 	ast_mutex_lock(&p->lock);
 
 	/* STARTPBX !!! */
-	ast_setstate(c, AST_STATE_RING);
 	if (ast_pbx_start(c)) {
 		ast_log(LOG_WARNING, "Unable to start PBX on %s\n", c->name);
 		c->hangupcause = AST_CAUSE_SWITCH_CONGESTION; /* The ast_hangup() is dangerous here!!! */
