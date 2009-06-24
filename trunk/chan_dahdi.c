@@ -10673,6 +10673,8 @@ ss7_start_switch:
 				} else {
 					p = linkset->pvts[chanpos];
 					ast_mutex_lock(&p->lock);
+					p->proceeding = 1;
+					p->dialing = 0;
 					p->ss7call = (e->e == ISUP_EVENT_ANM) ?  e->anm.call : e->con.call;
 					p->subs[SUB_REAL].needanswer = 1;
 					if (p->dsp && p->dsp_features) {
