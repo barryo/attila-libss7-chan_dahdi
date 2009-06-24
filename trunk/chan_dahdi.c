@@ -4595,6 +4595,9 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 			/* absorb event */
 		} else {
 #endif
+			if (p->ignore_dtmf_regenerate) {
+				return &p->subs[index].f;
+			}
 			p->subs[index].f.frametype = AST_FRAME_DTMF_END;
 			p->subs[index].f.subclass = res & 0xff;
 #ifdef HAVE_PRI
@@ -4605,6 +4608,9 @@ static struct ast_frame *dahdi_handle_event(struct ast_channel *ast)
 	}
 
 	if (res & DAHDI_EVENT_DTMFDOWN) {
+		if (p->ignore_dtmf_regenerate) {
+			return &p->subs[index].f;
+		}
 		ast_debug(1, "DTMF Down '%c'\n", res & 0xff);
 		/* Mute conference */
 		dahdi_confmute(p, 1);
