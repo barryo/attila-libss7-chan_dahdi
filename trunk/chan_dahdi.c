@@ -10371,7 +10371,7 @@ ss7_start_switch:
 					ast_verbose("COT request on previous CIC %d in IAM PC %d\n", (e->iam.cic - 1), e->iam.opc);
 					p = linkset->pvts[chanpos];
 					ast_mutex_lock(&p->lock);
-					if (!p->ss7call) {
+					if (!p->ss7call && !p->owner) {
 						p->inservice = 0; /* to prevent to use this circuit */
 						dahdi_loopback(p, 1);
 					} /* If already have a call don't loop */
