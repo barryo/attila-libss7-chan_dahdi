@@ -2505,7 +2505,6 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 		isup_set_oli(p->ss7call, ast->cid.cid_ani2);
 		isup_init_call(p->ss7->ss7, p->ss7call, p->cic, p->dpc);
 
-		ast_channel_lock(ast);
 		/* Set the charge number if it is set */
 		charge_str = pbx_builtin_getvar_helper(ast, "SS7_CHARGE_NUMBER");
 		if (charge_str)
@@ -2671,7 +2670,6 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 		if (ss7_forward_indicator_pmbits)
 			isup_set_forward_indicator_pmbits(p->ss7call, atoi(ss7_forward_indicator_pmbits));
 
-		ast_channel_unlock(ast);
 
 		isup_iam(p->ss7->ss7, p->ss7call);
 		ast_setstate(ast, AST_STATE_DIALING);
@@ -3572,9 +3570,16 @@ static int dahdi_answer(struct ast_channel *ast)
 	struct dahdi_pvt *p = ast->tech_pvt;
 	int res = 0;
 	int index;
+	
+	ast_mutex_lock(&p->lock);
+
+	if (ast->_state == AST_STATE_UP) {
+		ast_mutex_unlock(&p->lock);
+		return res;
+	}
+
 	int oldstate = ast->_state;
 	ast_setstate(ast, AST_STATE_UP);
-	ast_mutex_lock(&p->lock);
 	index = dahdi_get_index(ast, p, 0);
 	if (index < 0)
 		index = SUB_REAL;
