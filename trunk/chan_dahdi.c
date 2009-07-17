@@ -6229,6 +6229,7 @@ static struct ast_channel *dahdi_new(struct dahdi_pvt *i, int state, int startpb
 	tmp = ast_channel_alloc(0, state, i->cid_num, i->cid_name, i->accountcode, i->exten, i->context, i->amaflags, "DAHDI/%s", chan_name->str);
 	if (!tmp)
 		return NULL;
+	ast_debug(1, "!!! DAHDI Allocated: DAHDI/%s 0x%lx\n", chan_name->str, (long unsigned int) tmp);
 	tmp->tech = &dahdi_tech;
 	memset(&ps, 0, sizeof(ps));
 	ps.channo = i->channel;
