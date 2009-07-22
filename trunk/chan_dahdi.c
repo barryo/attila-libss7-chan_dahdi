@@ -9927,6 +9927,7 @@ static int ss7_pres_scr2cid_pres(char presentation_ind, char screening_ind)
     return ((presentation_ind & 0x3) << 5) | (screening_ind & 0x3);
 }
 
+/* TODO: fix it!!!
 static void ss7_process_connected(struct dahdi_pvt *p, char *connected_num, unsigned char connected_nai,
 		unsigned char connected_presentation_ind, unsigned char connected_screening_ind) {
 	struct ast_channel *c;
@@ -9945,6 +9946,7 @@ static void ss7_process_connected(struct dahdi_pvt *p, char *connected_num, unsi
 			ast_named_caller_presentation(ss7_pres_scr2cid_pres(connected_presentation_ind, connected_screening_ind)));
 
 }
+*/
 
 static void *ss7_linkset(void *data)
 {
@@ -10674,20 +10676,18 @@ ss7_start_switch:
 				break;
 			case ISUP_EVENT_CON:
 			case ISUP_EVENT_ANM:
-				/*
 				if (e->e == ISUP_EVENT_CON) {
 					cic = e->con.cic;
-					if (e->con.connected_num)
+					/* if (e->con.connected_num)
 						ss7_process_connected(p, e->con.connected_num, e->con.connected_nai,
-								e->con.connected_presentation_ind, e->con.connected_screening_ind);
+								e->con.connected_presentation_ind, e->con.connected_screening_ind); */
 				} else {
 					cic = e->anm.cic;
-					if (e->anm.connected_num)
+					/* if (e->anm.connected_num)
 						ss7_process_connected(p, e->anm.connected_num, e->anm.connected_nai,
-								e->anm.connected_presentation_ind, e->anm.connected_screening_ind);
+								e->anm.connected_presentation_ind, e->anm.connected_screening_ind); */
 				}
-				 it is dangerous!!!
-				*/
+
 				chanpos = ss7_find_cic(linkset, cic, (e->e == ISUP_EVENT_ANM) ? e->anm.opc : e->con.opc);
 				if (chanpos < 0) { /* Never will be true */
 					ast_log(LOG_WARNING, "ANM/CON on unconfigured CIC %d PC %d\n", cic, (e->e == ISUP_EVENT_ANM) ? e->anm.opc : e->con.opc);
