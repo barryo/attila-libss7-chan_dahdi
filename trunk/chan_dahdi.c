@@ -9675,13 +9675,14 @@ static void ss7_start_call(struct dahdi_pvt *p, struct dahdi_ss7 *linkset)
 		isup_acm(ss7, p->ss7call);
 	}
 
-	ast_mutex_unlock(&linkset->lock);
+	/* I had a deadlock cause of it !!! */
+	/*ast_mutex_unlock(&linkset->lock);  */
 	c = dahdi_new(p, AST_STATE_RING, 0, SUB_REAL, law, 0); /* The startpbx is sometimes faster than we set up the variables!!! */
 
 	if (!c) {
 		ast_log(LOG_WARNING, "Unable to start PBX on CIC %d\n", p->cic);
 		/* Holding this lock is assumed entering the function */
-		ast_mutex_lock(&linkset->lock);
+		/* ast_mutex_lock(&linkset->lock); */
 		isup_rel(p->ss7->ss7, p->ss7call, AST_CAUSE_SWITCH_CONGESTION);
 		return;
 	} else
@@ -9696,7 +9697,7 @@ static void ss7_start_call(struct dahdi_pvt *p, struct dahdi_ss7 *linkset)
 	 * when receiving either and IAM or a COT message.  Since they are only accessed
 	 * from this context, we should be safe to unlock around them */
 
-	ast_mutex_unlock(&p->lock);
+	/* ast_mutex_unlock(&p->lock); */
 
 	if (!ast_strlen_zero(p->charge_number)) {
 		pbx_builtin_setvar_helper(c, "SS7_CHARGE_NUMBER", p->charge_number);
@@ -9877,7 +9878,7 @@ static void ss7_start_call(struct dahdi_pvt *p, struct dahdi_ss7 *linkset)
 		p->cug_indicator = ISUP_CUG_NON;
 	}
 
-	ast_mutex_lock(&p->lock);
+	/* ast_mutex_lock(&p->lock); */
 
 	/* STARTPBX !!! */
 	if (ast_pbx_start(c)) {
@@ -9886,7 +9887,7 @@ static void ss7_start_call(struct dahdi_pvt *p, struct dahdi_ss7 *linkset)
 		c->_softhangup |= AST_SOFTHANGUP_DEV;
 	}
 
-	ast_mutex_lock(&linkset->lock);
+	 /* ast_mutex_lock(&linkset->lock); */
 }
 
 static void ss7_apply_plan_to_number(char *buf, size_t size, const struct dahdi_ss7 *ss7, const char *number, const unsigned nai)
