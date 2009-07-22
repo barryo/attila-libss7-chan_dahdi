@@ -10674,6 +10674,7 @@ ss7_start_switch:
 				break;
 			case ISUP_EVENT_CON:
 			case ISUP_EVENT_ANM:
+				/*
 				if (e->e == ISUP_EVENT_CON) {
 					cic = e->con.cic;
 					if (e->con.connected_num)
@@ -10685,7 +10686,8 @@ ss7_start_switch:
 						ss7_process_connected(p, e->anm.connected_num, e->anm.connected_nai,
 								e->anm.connected_presentation_ind, e->anm.connected_screening_ind);
 				}
-
+				 it is dangerous!!!
+				*/
 				chanpos = ss7_find_cic(linkset, cic, (e->e == ISUP_EVENT_ANM) ? e->anm.opc : e->con.opc);
 				if (chanpos < 0) { /* Never will be true */
 					ast_log(LOG_WARNING, "ANM/CON on unconfigured CIC %d PC %d\n", cic, (e->e == ISUP_EVENT_ANM) ? e->anm.opc : e->con.opc);
