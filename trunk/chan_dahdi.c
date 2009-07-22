@@ -5522,9 +5522,17 @@ static struct ast_frame  *dahdi_read(struct ast_channel *ast)
 	int index;
 	void *readbuf;
 	struct ast_frame *f;
+	int i = 0;
 
-	while (ast_mutex_trylock(&p->lock)) {
+	while (ast_mutex_trylock(&p->lock) && i < 1000) {
 		CHANNEL_DEADLOCK_AVOIDANCE(ast);
+		i++;
+	}
+
+	if (i == 1000) {
+		ast_log(LOG_ERROR, "Couldn't lock DAHDI pvt...\n");
+		f = __dahdi_exception(ast);
+		return f;
 	}
 
 	index = dahdi_get_index(ast, p, 0);
