@@ -2173,7 +2173,8 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 	if (ignore_dtmf_regenerate && ast_true(ignore_dtmf_regenerate)) {
 		ast_debug(1, "Disabled DAHDI DTMF regeneration on %s\n", ast->name);
 		p->ignore_dtmf_regenerate = 1;
-	}
+	} else
+		p->ignore_dtmf_regenerate = 0;
 
 	switch (mysig) {
 	case SIG_FXOLS:
@@ -3579,7 +3580,17 @@ static int dahdi_answer(struct ast_channel *ast)
 	}
 
 	int oldstate = ast->_state;
+	const char *ignore_dtmf_regenerate;
+
 	ast_setstate(ast, AST_STATE_UP);
+
+	ignore_dtmf_regenerate = pbx_builtin_getvar_helper(ast, "DAHDI_IGNORE_INCOMMING_DTMF_DETECT");
+	if (ignore_dtmf_regenerate && ast_true(ignore_dtmf_regenerate)) {
+		p->ignore_dtmf_regenerate = 1;
+		ast_debug(1, "Disabled DTMF detection/regeneration on incomming CALL");
+	} else
+		p->ignore_dtmf_regenerate = 0;
+
 	index = dahdi_get_index(ast, p, 0);
 	if (index < 0)
 		index = SUB_REAL;
@@ -15456,7 +15467,8 @@ static int process_dahdi(struct dahdi_chan_conf *confp, struct ast_variable *v, 
 			if (!strcasecmp(policy, "full")) {
 				confp->chan.buf_policy = DAHDI_POLICY_WHEN_FULL;
 			} else if (!strcasecmp(policy, "half")) {
-				confp->chan.buf_policy = DAHDI_POLICY_IMMEDIATE /*HALF_FULL*/;
+				//confp->chan.buf_policy = DAHDI_POLICY_IMMEDIATE /*HALF_FULL*/;
+				confp->chan.buf_policy = DAHDI_POLICY_HALF_FULL; /*HALF_FULL*/;
 			} else if (!strcasecmp(policy, "immediate")) {
 				confp->chan.buf_policy = DAHDI_POLICY_IMMEDIATE;
 			} else {
