@@ -3692,6 +3692,10 @@ static int dahdi_answer(struct ast_channel *ast)
 			p->dialing = 0;
 			res = isup_anm(p->ss7->ss7, p->ss7call);
 			ss7_rel(p->ss7);
+			if (!p->echocontrol_ind || !(p->ss7->flags & LINKSET_FLAG_USEECHOCONTROL)) {
+				dahdi_enable_ec(p);
+				dahdi_train_ec(p);
+			}
 		} else {
 			ast_log(LOG_WARNING, "Unable to grab SS7 on span %d\n", p->span);
 			res = -1;
@@ -4537,7 +4541,7 @@ static void dahdi_handle_dtmfup(struct ast_channel *ast, int index, struct ast_f
 		} else {
 			ast_debug(1, "Fax already handled\n");
 		}
-		dahdi_disable_ec(p);
+		/* dahdi_disable_ec(p); */
 		dahdi_confmute(p, 0);
 		p->subs[index].f.frametype = AST_FRAME_NULL;
 		p->subs[index].f.subclass = 0;
@@ -9699,10 +9703,11 @@ static void ss7_start_call(struct dahdi_pvt *p, struct dahdi_ss7 *linkset)
 	} else
 		ast_verb(3, "Accepting call to '%s' on CIC %d\n", p->exten, p->cic);
 
-	 if(!p->echocontrol_ind || !(p->ss7->flags & LINKSET_FLAG_USEECHOCONTROL)) {
+	/* No no no!!! enable EC only in answer !!! */
+	/* if(!p->echocontrol_ind || !(p->ss7->flags & LINKSET_FLAG_USEECHOCONTROL)) {
 		dahdi_enable_ec(p);
 		dahdi_train_ec(p);
-	 }
+	 }*/
 
 	/* We only reference these variables in the context of the ss7_linkset function
 	 * when receiving either and IAM or a COT message.  Since they are only accessed
@@ -15467,8 +15472,8 @@ static int process_dahdi(struct dahdi_chan_conf *confp, struct ast_variable *v, 
 			if (!strcasecmp(policy, "full")) {
 				confp->chan.buf_policy = DAHDI_POLICY_WHEN_FULL;
 			} else if (!strcasecmp(policy, "half")) {
-				//confp->chan.buf_policy = DAHDI_POLICY_IMMEDIATE /*HALF_FULL*/;
-				confp->chan.buf_policy = DAHDI_POLICY_HALF_FULL; /*HALF_FULL*/;
+				confp->chan.buf_policy = DAHDI_POLICY_IMMEDIATE /*HALF_FULL*/;
+				//confp->chan.buf_policy = DAHDI_POLICY_HALF_FULL; /*HALF_FULL*/;
 			} else if (!strcasecmp(policy, "immediate")) {
 				confp->chan.buf_policy = DAHDI_POLICY_IMMEDIATE;
 			} else {
