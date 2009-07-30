@@ -4541,7 +4541,7 @@ static void dahdi_handle_dtmfup(struct ast_channel *ast, int index, struct ast_f
 		} else {
 			ast_debug(1, "Fax already handled\n");
 		}
-		dahdi_disable_ec(p);
+		/* dahdi_disable_ec(p); */
 		if (p->sig != SIG_SS7)
 			dahdi_confmute(p, 0); /* ??? */
 		p->subs[index].f.frametype = AST_FRAME_NULL;
