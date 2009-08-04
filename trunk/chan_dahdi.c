@@ -1250,7 +1250,7 @@ static int dahdi_digit_begin(struct ast_channel *chan, char digit)
 
 	ast_mutex_lock(&pvt->lock);
 
-	if (pvt->ignore_dtmf_regenerate)
+	if (pvt->ignore_dtmf_regenerate || chan->_state != AST_STATE_UP)
 		goto out;
 
 	index = dahdi_get_index(chan, pvt, 0);
@@ -1316,7 +1316,7 @@ static int dahdi_digit_end(struct ast_channel *chan, char digit, unsigned int du
 
 	ast_mutex_lock(&pvt->lock);
 
-	if (pvt->ignore_dtmf_regenerate)
+	if (pvt->ignore_dtmf_regenerate || chan->_state != AST_STATE_UP)
 		goto out;
 
 	index = dahdi_get_index(chan, pvt, 0);
