@@ -2126,6 +2126,39 @@ static int ss7_parse_prefix(struct dahdi_pvt *p, const char *number, char *nai)
 }
 #endif
 
+static void disable_dtmf_detect(struct dahdi_pvt *p)
+{
+	int val;
+
+	p->ignoredtmf = 1;
+
+	val = 0;
+	ioctl(p->subs[SUB_REAL].dfd, DAHDI_TONEDETECT, &val);
+
+	if (!p->hardwaredtmf && p->dsp) {
+		p->dsp_features &= ~DSP_FEATURE_DTMF_DETECT;
+		ast_dsp_set_features(p->dsp, p->dsp_features);
+	}
+}
+
+static void enable_dtmf_detect(struct dahdi_pvt *p)
+{
+	int val;
+
+	if (p->channel == CHAN_PSEUDO)
+		return;
+
+	p->ignoredtmf = 0;
+
+	val = DAHDI_TONEDETECT_ON | DAHDI_TONEDETECT_MUTE;
+	ioctl(p->subs[SUB_REAL].dfd, DAHDI_TONEDETECT, &val);
+
+	if (!p->hardwaredtmf && p->dsp) {
+		p->dsp_features |= DSP_FEATURE_DTMF_DETECT;
+		ast_dsp_set_features(p->dsp, p->dsp_features);
+	}
+}
+
 static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 {
 	struct dahdi_pvt *p = ast->tech_pvt;
@@ -2172,6 +2205,7 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 	ignore_dtmf_regenerate = pbx_builtin_getvar_helper(ast, "DAHDI_IGNORE_DTMF_REGENERATE");
 	if (ignore_dtmf_regenerate && ast_true(ignore_dtmf_regenerate)) {
 		ast_debug(1, "Disabled DAHDI DTMF regeneration on %s\n", ast->name);
+		disable_dtmf_detect(p);
 		p->ignore_dtmf_regenerate = 1;
 	} else
 		p->ignore_dtmf_regenerate = 0;
@@ -3207,6 +3241,7 @@ static int dahdi_hangup(struct ast_channel *ast)
 	ast_mutex_lock(&p->lock);
 
 	p->ignore_dtmf_regenerate = 0;
+	enable_dtmf_detect(p);
 	index = dahdi_get_index(ast, p, 1);
 
 	if ((p->sig == SIG_PRI) || (p->sig == SIG_SS7) || (p->sig == SIG_BRI) || (p->sig == SIG_BRI_PTMP)) {
@@ -3587,9 +3622,11 @@ static int dahdi_answer(struct ast_channel *ast)
 	ignore_dtmf_regenerate = pbx_builtin_getvar_helper(ast, "DAHDI_IGNORE_INCOMMING_DTMF_DETECT");
 	if (ignore_dtmf_regenerate && ast_true(ignore_dtmf_regenerate)) {
 		p->ignore_dtmf_regenerate = 1;
+		disable_dtmf_detect(p);
 		ast_debug(1, "Disabled DTMF detection/regeneration on incomming CALL");
 	} else
 		p->ignore_dtmf_regenerate = 0;
+
 
 	index = dahdi_get_index(ast, p, 0);
 	if (index < 0)
@@ -3989,39 +4026,6 @@ static void dahdi_link(struct dahdi_pvt *slave, struct dahdi_pvt *master) {
 	slave->master = master;
 
 	ast_debug(1, "Making %d slave to master %d at %d\n", slave->channel, master->channel, x);
-}
-
-static void disable_dtmf_detect(struct dahdi_pvt *p)
-{
-	int val;
-
-	p->ignoredtmf = 1;
-
-	val = 0;
-	ioctl(p->subs[SUB_REAL].dfd, DAHDI_TONEDETECT, &val);
-
-	if (!p->hardwaredtmf && p->dsp) {
-		p->dsp_features &= ~DSP_FEATURE_DTMF_DETECT;
-		ast_dsp_set_features(p->dsp, p->dsp_features);
-	}
-}
-
-static void enable_dtmf_detect(struct dahdi_pvt *p)
-{
-	int val;
-
-	if (p->channel == CHAN_PSEUDO)
-		return;
-
-	p->ignoredtmf = 0;
-
-	val = DAHDI_TONEDETECT_ON | DAHDI_TONEDETECT_MUTE;
-	ioctl(p->subs[SUB_REAL].dfd, DAHDI_TONEDETECT, &val);
-
-	if (!p->hardwaredtmf && p->dsp) {
-		p->dsp_features |= DSP_FEATURE_DTMF_DETECT;
-		ast_dsp_set_features(p->dsp, p->dsp_features);
-	}
 }
 
 static enum ast_bridge_result dahdi_bridge(struct ast_channel *c0, struct ast_channel *c1, int flags, struct ast_frame **fo, struct ast_channel **rc, int timeoutms)
