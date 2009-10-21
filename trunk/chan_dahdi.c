@@ -10198,6 +10198,8 @@ static void *ss7_linkset(void *data)
 					} else
 						mb_state[i] = 0;
 
+					p_cur->remotelyblocked = p_cur->remotelyblocked & ~SS7_BLOCKED_MAINTENANCE;
+
 					if(p_cur->owner) {
 						p_cur->owner->_softhangup |= AST_SOFTHANGUP_DEV;
 						if(p_cur->owner->_state == AST_STATE_DIALING && !linkset->pvts[i]->proceeding)
