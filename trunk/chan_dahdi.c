@@ -15080,8 +15080,10 @@ static char *handle_ss7_add_cics(struct ast_cli_entry *e, int cmd, struct ast_cl
 		ast_mutex_init(&p->lock);
 		ifcount++;
 
-		for (x = 0; x < 3; x++)
+		for (x = 0; x < 3; x++) {
 			p->subs[x].dfd = -1;
+			p->subs[x].owner = NULL;
+		}
 		p->channel = cur_dahdi;
 		p->owner = NULL;
 		p->ss7call = NULL;
