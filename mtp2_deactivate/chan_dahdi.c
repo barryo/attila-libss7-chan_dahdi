@@ -14050,6 +14050,74 @@ static int ss7_find_alloc_call(struct dahdi_pvt *p) {
 	return 1;
 }
 
+static char *handle_ss7_mtp2_activate(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	int span;
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "ss7 mtp2 activate";
+		e->usage =
+			"Usage: ss7 mtp2 activate <linkset> <slc>\n"
+			"       Activate the specified signalling link on MTP2 layer\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+	if (a->argc < 5)
+		return CLI_SHOWUSAGE;
+	span = atoi(a->argv[3]);
+	if ((span < 1) || (span > NUM_SPANS)) {
+		ast_cli(a->fd, "Invalid linkset %s.  Should be a number from %d to %d\n", a->argv[3], 1, NUM_SPANS);
+		return CLI_SUCCESS;
+	}
+	if (!linksets[span-1].ss7) {
+		ast_cli(a->fd, "No SS7 running on linkset %d\n", span);
+		return CLI_SUCCESS;
+	}
+
+	ast_mutex_lock(&linksets[span-1].lock);
+	ss7_mtp2_deactivate(linksets[span-1].ss7, atoi(a->argv[4]), 0);
+	ast_mutex_unlock(&linksets[span-1].lock);
+	pthread_kill(linksets[span-1].master, SIGURG);
+
+	ast_cli(a->fd, "Activated MTP2 linkset %d SLC %d\n", span, atoi(a->argv[4]));
+	return CLI_SUCCESS;
+}
+
+static char *handle_ss7_mtp2_deactivate(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	int span;
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "ss7 mtp2 deactivate";
+		e->usage =
+			"Usage: ss7 mtp2 deactivate <linkset> <slc>\n"
+			"       Deactivate the specified signalling link on MTP2 layer\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+	if (a->argc < 5)
+		return CLI_SHOWUSAGE;
+	span = atoi(a->argv[3]);
+	if ((span < 1) || (span > NUM_SPANS)) {
+		ast_cli(a->fd, "Invalid linkset %s.  Should be a number from %d to %d\n", a->argv[3], 1, NUM_SPANS);
+		return CLI_SUCCESS;
+	}
+	if (!linksets[span-1].ss7) {
+		ast_cli(a->fd, "No SS7 running on linkset %d\n", span);
+		return CLI_SUCCESS;
+	}
+
+	ast_mutex_lock(&linksets[span-1].lock);
+	ss7_mtp2_deactivate(linksets[span-1].ss7, atoi(a->argv[4]), 1);
+	ast_mutex_unlock(&linksets[span-1].lock);
+	pthread_kill(linksets[span-1].master, SIGURG);
+
+	ast_cli(a->fd, "Deactivated MTP2 linkset %d SLC %d\n", span, atoi(a->argv[4]));
+	return CLI_SUCCESS;
+}
+
 static char *handle_ss7_no_debug(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	int span;
@@ -15181,7 +15249,9 @@ static struct ast_cli_entry dahdi_ss7_cli[] = {
 	AST_CLI_DEFINE(handle_ss7_net_mnt, "Send an NET MNT message"),
 	AST_CLI_DEFINE(handle_ss7_mtp3_restart, "Restart a link"),
 	AST_CLI_DEFINE(handle_ss7_destroy_cics, "Destroy ss7 cics in linkset"),
-	AST_CLI_DEFINE(handle_ss7_add_cics, "Add ss7 cics in linkset")
+	AST_CLI_DEFINE(handle_ss7_add_cics, "Add ss7 cics in linkset"),
+	AST_CLI_DEFINE(handle_ss7_mtp2_activate, "Aactivate a signalling link on MTP2 layer"),
+	AST_CLI_DEFINE(handle_ss7_mtp2_deactivate, "Deactivate a signalling link on MTP2 layer")
 };
 #endif /* HAVE_SS7 */
 
