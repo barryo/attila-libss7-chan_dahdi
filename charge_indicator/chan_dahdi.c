@@ -2489,7 +2489,6 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 		const char *ss7_cug_interlock_code;
 		const char *ss7_interworking_indicator;
 		const char *ss7_forward_indicator_pmbits;
-		const char *ss7_charge_indicator;
 
 		c = strchr(dest, '/');
 		if (c)
@@ -2706,11 +2705,6 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 		ss7_forward_indicator_pmbits = pbx_builtin_getvar_helper(ast, "SS7_FORWARD_INDICATOR_PMBITS");
 		if (ss7_forward_indicator_pmbits)
 			isup_set_forward_indicator_pmbits(p->ss7call, atoi(ss7_forward_indicator_pmbits));
-
-		ss7_charge_indicator  = pbx_builtin_getvar_helper(ast, "SS7_CHARGE_INDICATOR");
-		ast_log (LOG_ERROR, "CHARGE: %s\n");
-		if (ss7_charge_indicator && ss7_charge_indicator[0])
-			isup_set_charge_indicator(p->ss7call, atoi(ss7_charge_indicator));
 
 		isup_iam(p->ss7->ss7, p->ss7call);
 		ast_setstate(ast, AST_STATE_DIALING);
@@ -3607,6 +3601,15 @@ static int dahdi_hangup(struct ast_channel *ast)
 	return 0;
 }
 
+#ifdef HAVE_SS7
+static void ss7_get_charge_indicator_var(struct ast_channel *ast, struct dahdi_pvt *p)
+{
+	const char *ss7_charge_indicator = pbx_builtin_getvar_helper(ast, "SS7_CHARGE_INDICATOR");
+	if (ss7_charge_indicator && ss7_charge_indicator[0])
+		 isup_set_charge_indicator(p->ss7call, atoi(ss7_charge_indicator));
+}
+#endif
+
 static int dahdi_answer(struct ast_channel *ast)
 {
 	struct dahdi_pvt *p = ast->tech_pvt;
@@ -3728,8 +3731,10 @@ static int dahdi_answer(struct ast_channel *ast)
 				isup_set_connected(p->ss7call, connected_num + connected_strip, connected_nai, connected_pres, SS7_SCREENING_NETWORK_PROVIDED);
 			}
 
-			if (!p->proceeding && (p->ss7->flags & LINKSET_FLAG_AUTOACM))
-			    isup_acm(p->ss7->ss7, p->ss7call);
+			if (!p->proceeding && (p->ss7->flags & LINKSET_FLAG_AUTOACM)) {
+				ss7_get_charge_indicator_var(ast, p);
+				isup_acm(p->ss7->ss7, p->ss7call);
+			}
 
 			p->proceeding = 1;
 			p->dialing = 0;
@@ -6006,6 +6011,7 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 					ss7_grab(p, p->ss7);
 
 					if (!p->proceeding && (p->ss7->flags & LINKSET_FLAG_AUTOACM)) {
+						ss7_get_charge_indicator_var(chan, p);
 						isup_acm(p->ss7->ss7, p->ss7call);
 						p->proceeding = 1;
 					}
@@ -6057,6 +6063,7 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 
 				if (p->ss7->ss7) {
 					ss7_grab(p, p->ss7);
+					ss7_get_charge_indicator_var(chan, p);
 					isup_acm(p->ss7->ss7, p->ss7call);
 					p->proceeding = 1;
 					ss7_rel(p->ss7);
@@ -6090,6 +6097,7 @@ static int dahdi_indicate(struct ast_channel *chan, int condition, const void *d
 					ss7_grab(p, p->ss7);
 
 					if (!p->proceeding && (p->ss7->flags & LINKSET_FLAG_AUTOACM)) {
+						ss7_get_charge_indicator_var(chan, p);
 						isup_acm(p->ss7->ss7, p->ss7call);
 						p->proceeding = 1;
 					}
