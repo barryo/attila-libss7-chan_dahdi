@@ -9966,15 +9966,17 @@ static void ss7_process_connected(struct dahdi_pvt *p, char *connected_num, unsi
 }
 */
 
-static void *ss7_pass_charge_indicator_to_var(struct dahdi_pvt *p, struct dahdi_ss7 *ss7)
+static void ss7_pass_charge_indicator_to_var(struct dahdi_pvt *p, struct dahdi_ss7 *ss7)
 {
+	char tmp[32];
+	snprintf(tmp, sizeof(tmp), "%d", p->charge_indicator);
 	ast_mutex_unlock(&ss7->lock);
 	if (p->owner) {
 		ast_mutex_unlock(&ss7->lock);
 		if (ast_channel_trylock(p->owner)) {
 			DEADLOCK_AVOIDANCE(&p->lock);
 		} else {
-			pbx_builtin_setvar_helper(p->owner, "SS7_CHARGE_INDICATOR", p->charge_indicator);
+			pbx_builtin_setvar_helper(p->owner, "SS7_CHARGE_INDICATOR", tmp);
 			ast_channel_unlock(p->owner);
 		}
 	}
@@ -10569,7 +10571,7 @@ ss7_start_switch:
 					}
 
 					p->charge_indicator = e->acm.charge_indicator;
-					ss7_pass_charge_indicator_to_var(p, ss7);
+					ss7_pass_charge_indicator_to_var(p, linkset);
 
 					dahdi_queue_frame(p, &f, linkset);
 					p->proceeding = 1;
@@ -10737,7 +10739,7 @@ ss7_start_switch:
 					ast_mutex_lock(&p->lock);
 					if (e->e == ISUP_EVENT_CON) {
 						p->charge_indicator = e->con.charge_indicator;
-						ss7_pass_charge_indicator_to_var(p, ss7);
+						ss7_pass_charge_indicator_to_var(p, linkset);
 					}
 					p->proceeding = 1;
 					p->dialing = 0;
