@@ -3604,7 +3604,6 @@ static int dahdi_hangup(struct ast_channel *ast)
 #ifdef HAVE_SS7
 static void ss7_get_charge_indicator_var(struct ast_channel *ast, struct dahdi_pvt *p)
 {
-	ast_log(LOG_ERROR, "PARSE CHARGE!!!\n");
 	const char *ss7_charge_indicator = pbx_builtin_getvar_helper(ast, "SS7_CHARGE_INDICATOR");
 	if (ss7_charge_indicator && ss7_charge_indicator[0])
 		 isup_set_charge_indicator(p->ss7call, atoi(ss7_charge_indicator));
