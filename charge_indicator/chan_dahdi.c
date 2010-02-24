@@ -2708,6 +2708,7 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 			isup_set_forward_indicator_pmbits(p->ss7call, atoi(ss7_forward_indicator_pmbits));
 
 		ss7_charge_indicator  = pbx_builtin_getvar_helper(ast, "SS7_CHARGE_INDICATOR");
+		ast_log (LOG_ERROR, "CHARGE: %s\n");
 		if (ss7_charge_indicator && ss7_charge_indicator[0])
 			isup_set_charge_indicator(p->ss7call, atoi(ss7_charge_indicator));
 
