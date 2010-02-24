@@ -600,6 +600,7 @@ static struct dahdi_pvt {
 	unsigned int do_hangup; /* what have to do in chan_dahdi */
 	unsigned int called_complete;
 	unsigned int echocontrol_ind;
+	unsigned int charge_indicator;
 #endif
 	unsigned int use_smdi:1;		/* Whether to use SMDI on this channel */
 	struct ast_smdi_interface *smdi_iface;	/* The serial port to listen for SMDI data on */
@@ -2488,6 +2489,7 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 		const char *ss7_cug_interlock_code;
 		const char *ss7_interworking_indicator;
 		const char *ss7_forward_indicator_pmbits;
+		const char *ss7_charge_indicator;
 
 		c = strchr(dest, '/');
 		if (c)
@@ -2705,6 +2707,9 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 		if (ss7_forward_indicator_pmbits)
 			isup_set_forward_indicator_pmbits(p->ss7call, atoi(ss7_forward_indicator_pmbits));
 
+		ss7_charge_indicator  = pbx_builtin_getvar_helper(ast, "SS7_CHARGE_INDICATOR");
+		if (ss7_charge_indicator)
+			isup_set_charge_indicator(p->ss7call, atoi(ss7_charge_indicator));
 
 		isup_iam(p->ss7->ss7, p->ss7call);
 		ast_setstate(ast, AST_STATE_DIALING);
@@ -9961,6 +9966,21 @@ static void ss7_process_connected(struct dahdi_pvt *p, char *connected_num, unsi
 }
 */
 
+static void *ss7_pass_charge_indicator_to_var(struct dahdi_pvt *p, struct dahdi_ss7 *ss7)
+{
+	ast_mutex_unlock(&ss7->lock);
+	if (p->owner) {
+		ast_mutex_unlock(&ss7->lock);
+		if (ast_channel_trylock(p->owner)) {
+			DEADLOCK_AVOIDANCE(&p->lock);
+		} else {
+			pbx_builtin_setvar_helper(p->owner, "SS7_CHARGE_INDICATOR", p->charge_indicator);
+			ast_channel_unlock(p->owner);
+		}
+	}
+	ast_mutex_lock(&ss7->lock);
+}
+
 static void *ss7_linkset(void *data)
 {
 	int res, i;
@@ -10547,6 +10567,10 @@ ss7_start_switch:
 					if (e->acm.call_ref_ident > 0) {
 						p->rlt = 1; /* Setting it but not using it here*/
 					}
+
+					p->charge_indicator = e->acm.charge_indicator;
+					ss7_pass_charge_indicator_to_var(p, ss7);
+
 					dahdi_queue_frame(p, &f, linkset);
 					p->proceeding = 1;
 					p->dialing = 0;
@@ -10711,6 +10735,10 @@ ss7_start_switch:
 				} else {
 					p = linkset->pvts[chanpos];
 					ast_mutex_lock(&p->lock);
+					if (e->e == ISUP_EVENT_CON) {
+						p->charge_indicator = e->con.charge_indicator;
+						ss7_pass_charge_indicator_to_var(p, ss7);
+					}
 					p->proceeding = 1;
 					p->dialing = 0;
 					p->ss7call = (e->e == ISUP_EVENT_ANM) ?  e->anm.call : e->con.call;
