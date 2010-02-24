@@ -9980,13 +9980,15 @@ static void ss7_pass_charge_indicator_to_var(struct dahdi_pvt *p, struct dahdi_s
 	char tmp[32];
 	snprintf(tmp, sizeof(tmp), "%d", p->charge_indicator);
 	ast_mutex_unlock(&ss7->lock);
-	if (p->owner) {
-		ast_mutex_unlock(&ss7->lock);
-		if (ast_channel_trylock(p->owner)) {
-			DEADLOCK_AVOIDANCE(&p->lock);
-		} else {
-			pbx_builtin_setvar_helper(p->owner, "SS7_CHARGE_INDICATOR", tmp);
-			ast_channel_unlock(p->owner);
+	for (;;) {
+		if (p->owner) {
+			if (ast_channel_trylock(p->owner)) {
+				DEADLOCK_AVOIDANCE(&p->lock);
+			} else {
+				pbx_builtin_setvar_helper(p->owner, "SS7_CHARGE_INDICATOR", tmp);
+				ast_channel_unlock(p->owner);
+				break;
+			}
 		}
 	}
 	ast_mutex_lock(&ss7->lock);
